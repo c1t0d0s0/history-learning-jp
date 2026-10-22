@@ -1,1 +1,5 @@
 const GTM_ID = 'G-XXXXXXXX';
+const FIREBASE_API_KEY = '';
+const FIREBASE_AUTH_DOMAIN = '';
+const FIREBASE_PROJECT_ID = '';
+const FIREBASE_APP_ID = '';
