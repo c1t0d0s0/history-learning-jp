@@ -8,7 +8,7 @@ const pt = (n: number) => `${n.toLocaleString('ja-JP')}pt`;
  * スタンプカード・スズメカード・ログインの文は、社会クイズと同じ (3 年生でも読める表記)
  */
 export const T = {
-  brand: 'スズメの 歴史ならべ',
+  brand: '日本史ならべ',
   lead: '日本の 歴史の できごとを 年表に ならべよう。小学校の 社会と 中学受験に 出る できごと。',
   daily: '今日の チャレンジ',
   dateLabel: (m: number, d: number, w: number) => `${m}月${d}日（${'日月火水木金土'[w]}）`,
