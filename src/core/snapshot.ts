@@ -11,6 +11,9 @@ export interface Progress {
   done: boolean;
   /** 時代の練習が何回目か (0 から数える)。「つぎの 5まい」のたびに進む。今日のチャレンジにはない */
   round?: number;
+  /** さいごにクリアした日 (YYYY-MM-DD、日本時間)。ホームの「クリア」と花丸は、この日が今日のときだけ出す。
+   *  「つぎの 5まい」で次の回に進んでも引きつぐ */
+  clearedOn?: string;
   /** さいごに保存した時刻 (ミリ秒)。2 か所の記録を合わせるときに使う */
   at?: number;
 }
@@ -124,7 +127,13 @@ export function toProgressDoc(p: Progress, now: number): ProgressDoc {
     schema: SCHEMA,
     updatedAt: p.at ?? now,
     status: p.done ? 'done' : 'playing',
-    data: { sig: p.sig, placed: p.placed, mistakes: p.mistakes, ...(p.round ? { round: p.round } : {}) },
+    data: {
+      sig: p.sig,
+      placed: p.placed,
+      mistakes: p.mistakes,
+      ...(p.round ? { round: p.round } : {}),
+      ...(p.clearedOn ? { clearedOn: p.clearedOn } : {}),
+    },
   };
 }
 
@@ -137,6 +146,7 @@ export function fromProgressDoc(doc: Partial<ProgressDoc> | null | undefined): P
     mistakes: typeof d.mistakes === 'number' && d.mistakes >= 0 ? Math.floor(d.mistakes) : 0,
     done: doc?.status === 'done',
     ...(typeof d.round === 'number' && d.round > 0 ? { round: d.round } : {}),
+    ...(typeof d.clearedOn === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.clearedOn) ? { clearedOn: d.clearedOn } : {}),
     at: typeof doc?.updatedAt === 'number' ? doc.updatedAt : undefined,
   };
 }

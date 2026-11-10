@@ -1,3 +1,4 @@
+import { jstDate } from './date';
 import { CLEAR_POINTS, earnedPoints, normalizeStamps, rewardFor, type StampReward } from './rewards';
 import { emptySnapshot, type OwnedCard, type Progress, type Snapshot } from './snapshot';
 
@@ -100,6 +101,12 @@ export function loadProgress(game: { id: string; sig: string; round?: number }):
   return { sig: game.sig, placed: [], mistakes: 0, done: false, ...(game.round ? { round: game.round } : {}) };
 }
 
+/** 保存してある途中経過 (カードが入れかわっていてもそのまま)。なければ null */
+export function savedProgress(gameId: string): Progress | null {
+  const saved = read<Progress>(`progress:${gameId}`);
+  return isProgress(saved) ? saved : null;
+}
+
 /** 時代の練習が、今 何回目か (0 から数える)。まだやっていなければ 0 */
 export function stageRound(gameId: string): number {
   const saved = read<Progress>(`progress:${gameId}`);
@@ -112,13 +119,22 @@ export function saveProgress(id: string, progress: Progress): void {
 
 export type Status = 'new' | 'playing' | 'done';
 
-/** ホームに出す状態。練習は 1 回クリアすれば、やりなおしている間も「クリア」のまま */
-export function statusOf(game: { id: string; sig: string }): Status {
-  if (getClears().includes(game.id)) return 'done';
+/**
+ * ホームに出す状態。「クリア」(花丸) はクリアした日だけ出し、次の日からは「はじめ」にもどる。
+ * 今日のうちなら、「つぎの 5まい」に進んでいても「クリア」のまま。
+ * ならべ終わってもクリアにならなかった (ミスが多かった) ときは「はじめ」にもどす。
+ */
+export function statusOf(game: { id: string; sig: string }, today: string): Status {
   const saved = read<Progress>(`progress:${game.id}`);
-  if (!isProgress(saved) || saved.sig !== game.sig) return 'new';
-  if (saved.done) return 'done';
+  if (!isProgress(saved)) return 'new';
+  if (saved.clearedOn === today) return 'done';
+  if (saved.sig !== game.sig || saved.done) return 'new';
   return saved.placed.length > 0 || saved.mistakes > 0 ? 'playing' : 'new';
+}
+
+/** ならべ終わったのが今日より前か (時代の練習は、次の日に開くと次の回に進める) */
+export function finishedBefore(progress: Progress, today: string): boolean {
+  return progress.done && !!progress.at && jstDate(new Date(progress.at)) < today;
 }
 
 /** 今日のチャレンジの途中経過のうち、前の日のものかどうか (前の日のものは消してよい) */

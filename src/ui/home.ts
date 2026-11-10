@@ -27,8 +27,8 @@ function soundSwitch(): HTMLElement {
   return h('p', { class: 'settings' }, btn);
 }
 
-function stageTile(stage: Stage, index: number): HTMLElement {
-  const status = statusOf(stageGame(stage, stageRound(stageGameId(stage.id))));
+function stageTile(stage: Stage, index: number, today: string): HTMLElement {
+  const status = statusOf(stageGame(stage, stageRound(stageGameId(stage.id))), today);
   return h(
     'a',
     { class: `unit unit-${status}`, href: `#/stage/${stage.id}` },
@@ -45,7 +45,7 @@ export function renderHome(root: HTMLElement): void {
   const today = jstDate();
   pruneOldDaily(today);
   const daily = dailyGame(today);
-  const dailyStatus = statusOf(daily);
+  const dailyStatus = statusOf(daily, today);
   const run = currentRun(getStamps(), today);
   const dailyAction = { new: T.start, playing: T.resume, done: T.review }[dailyStatus];
   const d = new Date(`${today}T00:00:00Z`);
@@ -97,7 +97,7 @@ export function renderHome(root: HTMLElement): void {
           { 'aria-labelledby': 'stages-title' },
           h('h2', { id: 'stages-title' }, T.stagesTitle),
           h('p', { class: 'section-note' }, T.stagesNote),
-          h('div', { class: 'units' }, ...STAGES.map((s, i) => stageTile(s, i))),
+          h('div', { class: 'units' }, ...STAGES.map((s, i) => stageTile(s, i, today))),
         ),
         h(
           'section',

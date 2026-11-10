@@ -243,6 +243,11 @@ export function renderGame(root: HTMLElement, game: Game, title: string, today: 
     } else if (progress.mistakes <= STAGE_PASS_MISTAKES) {
       reward.clearPoints = addClear(game.id);
     }
+    if (game.kind === 'daily' || progress.mistakes <= STAGE_PASS_MISTAKES) {
+      // ホームの「クリア」と花丸は、この日だけ出す
+      progress = { ...progress, clearedOn: today };
+      save();
+    }
     playChirp(reward.clearPoints > 0 || reward.stamp?.added ? 3 : 1);
     say('');
     render();

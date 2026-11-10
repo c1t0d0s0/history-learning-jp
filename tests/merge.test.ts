@@ -49,6 +49,16 @@ describe('2 か所の記録を合わせる', () => {
     expect(mergeProgress(less, more).at).toBe(9);
   });
 
+  it('クリアした日は、新しいほうを残す (次の回に進んだほうを使っても消えない)', () => {
+    const cleared = prog(['c1', 'c2'], { done: true, clearedOn: '2026-11-10', at: 1 });
+    const next = prog([], { sig: 'round1', round: 1, at: 5 });
+    expect(mergeProgress(cleared, next)).toEqual({ ...next, clearedOn: '2026-11-10' });
+    expect(mergeProgress(next, cleared)).toEqual({ ...next, clearedOn: '2026-11-10' });
+    const older = prog(['c1'], { clearedOn: '2026-11-01', at: 9 });
+    expect(mergeProgress(older, cleared).clearedOn).toBe('2026-11-10');
+    expect(mergeProgress(cleared, older).clearedOn).toBe('2026-11-10');
+  });
+
   it('置いた数が同じなら、ミスが多いほう (ミスは取り消せない)', () => {
     const a = prog(['c1'], { mistakes: 2, at: 1 });
     const b = prog(['c1'], { mistakes: 0, at: 9 });
@@ -169,6 +179,8 @@ describe('Firestore の形との変換', () => {
     expect(toProgressDoc(later, 1).data).toEqual({ sig: 's', placed: ['c2'], mistakes: 0, round: 3 });
     expect(fromProgressDoc(toProgressDoc(later, 1))).toEqual(later);
     expect(doc.data).not.toHaveProperty('round');
+    const cleared = prog(['c1'], { done: true, clearedOn: '2026-11-10', at: 3 });
+    expect(fromProgressDoc(toProgressDoc(cleared, 1))).toEqual(cleared);
     expect(doc.data).toEqual({ sig: 's', placed: ['c0', 'c3', 'c1'], mistakes: 0 });
   });
 

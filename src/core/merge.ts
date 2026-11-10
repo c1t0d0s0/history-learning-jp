@@ -8,8 +8,8 @@ import type { OwnedCard, Progress, Settings, Snapshot } from './snapshot';
 /** 決め手がないときに、いつも同じほうをえらぶための比べ方 */
 const pickStable = <T>(a: T, b: T): T => (JSON.stringify(a) <= JSON.stringify(b) ? a : b);
 
-/** 途中経過: 練習の回がちがえば、進んでいるほう。カードが同じなら、クリア済みを優先。どちらも途中なら、多く置いているほう (同じなら、ミスが多いほう。ミスは取り消せないので) */
-export function mergeProgress(a: Progress, b: Progress): Progress {
+/** どちらの途中経過を使うか (クリアした日は、このあと mergeProgress で合わせる) */
+function pickProgress(a: Progress, b: Progress): Progress {
   const newer = (a.at ?? 0) !== (b.at ?? 0) ? ((a.at ?? 0) > (b.at ?? 0) ? a : b) : pickStable(a, b);
   if ((a.round ?? 0) !== (b.round ?? 0)) return (a.round ?? 0) > (b.round ?? 0) ? a : b;
   // カードそのものが入れかわっているときは、新しく保存されたほう
@@ -32,6 +32,15 @@ export function mergeProgress(a: Progress, b: Progress): Progress {
   const at = Math.max(a.at ?? 0, b.at ?? 0);
   if (at > 0) merged.at = at;
   return merged;
+}
+
+/** 途中経過: 練習の回がちがえば、進んでいるほう。カードが同じなら、クリア済みを優先。どちらも途中なら、多く置いているほう (同じなら、ミスが多いほう。ミスは取り消せないので)。
+ *  クリアした日は、新しいほう */
+export function mergeProgress(a: Progress, b: Progress): Progress {
+  const picked = pickProgress(a, b);
+  const clearedOn = [a.clearedOn, b.clearedOn].filter((d): d is string => !!d).sort().pop();
+  if (!clearedOn || picked.clearedOn === clearedOn) return picked;
+  return { ...picked, clearedOn };
 }
 
 /** カード: 両方を合わせる。同じカードは、払った額の小さいほう */

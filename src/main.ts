@@ -2,7 +2,7 @@ import './styles.css';
 import { restoreStore, startCloud } from './cloud';
 import { jstDate } from './core/date';
 import { dailyGame, stageGame, stageGameId } from './core/game';
-import { saveProgress, stageRound } from './core/storage';
+import { finishedBefore, saveProgress, savedProgress, stageRound } from './core/storage';
 import { stageById } from './data/eras';
 import { renderCards } from './ui/cards';
 import { renderGame } from './ui/game';
@@ -27,11 +27,19 @@ function route(): void {
   if (location.hash === '#/daily') {
     cleanup = renderGame(app, dailyGame(today), T.daily, today);
   } else if (stage) {
-    const round = stageRound(stageGameId(stage.id));
-    cleanup = renderGame(app, stageGame(stage, round), stage.title, today, () => {
-      // 「つぎの 5つ」は、次の回に進む
+    const id = stageGameId(stage.id);
+    // 「つぎの 5つ」は、次の回に進む。今日クリアしたことは引きつぐ
+    const nextRound = () => {
+      const round = stageRound(id);
       const next = stageGame(stage, round + 1);
-      saveProgress(next.id, { sig: next.sig, placed: [], mistakes: 0, done: false, round: round + 1 });
+      const clearedOn = savedProgress(id)?.clearedOn;
+      saveProgress(next.id, { sig: next.sig, placed: [], mistakes: 0, done: false, round: round + 1, ...(clearedOn ? { clearedOn } : {}) });
+    };
+    // 前の日にならべ終わった回は、開いたときに次の回に進める (ホームでは「はじめ」にもどっているので)
+    const saved = savedProgress(id);
+    if (saved && finishedBefore(saved, today)) nextRound();
+    cleanup = renderGame(app, stageGame(stage, stageRound(id)), stage.title, today, () => {
+      nextRound();
       route();
     });
   } else if (location.hash === '#/timeline') {

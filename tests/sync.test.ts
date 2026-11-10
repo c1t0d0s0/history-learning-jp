@@ -132,10 +132,10 @@ function use(d: Device): void {
   d.sync.attach();
 }
 
-const done = { sig: 's', placed: ['e:a', 'e:b'], mistakes: 1, done: true };
+const today = jstDate();
+const done = { sig: 's', placed: ['e:a', 'e:b'], mistakes: 1, done: true, clearedOn: today };
 const playing = { sig: 's', placed: ['e:a'], mistakes: 0, done: false };
 const quiz = (id: string) => ({ id, sig: 's' });
-const today = jstDate();
 const daysBefore = (n: number) => Array.from({ length: n }, (_, i) => addDays(today, -i));
 
 let cloud: FakeCloud;
@@ -198,8 +198,8 @@ describe('ログインして記録をうつす', () => {
     // 画面は、その人の記録を見ている
     expect(currentUid()).toBe('alice');
     expect(balance()).toBe(1000);
-    expect(statusOf(quiz('stage-1'))).toBe('done');
-    expect(statusOf(quiz('stage-2'))).toBe('playing');
+    expect(statusOf(quiz('stage-1'), today)).toBe('done');
+    expect(statusOf(quiz('stage-2'), today)).toBe('playing');
     // ログインなしの記録は残っていない (もう一度ログインしても、二重にうつらない)
     expect([...a.storage.keys()].filter((k) => k.startsWith('rekishi:v1:'))).toEqual([]);
     expect(rememberedUid()).toBe('alice');
@@ -280,7 +280,7 @@ describe('ブラウザを変えても記録が続く', () => {
     expect(getStamps()).toHaveLength(7);
     expect(balance()).toBe(onA);
     expect(getCards()).toEqual([{ id: 'c02', paid: 80 }]);
-    expect(statusOf(quiz('stage-3'))).toBe('playing');
+    expect(statusOf(quiz('stage-3'), today)).toBe('playing');
     expect(getSound()).toBe(false);
     expect(b.dataChanged).toBeGreaterThan(0);
   });
